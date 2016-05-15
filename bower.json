@@ -1,0 +1,8 @@
+{
+  "name": "purescript-react-redux-example",
+  "private": true,
+  "ignore": [
+    "*",
+    "!src/**/*"
+  ]
+}

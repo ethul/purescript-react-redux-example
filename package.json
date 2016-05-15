@@ -1,0 +1,22 @@
+{
+  "name": "purescript-react-redux-example",
+  "version": "0.1.0",
+  "private": true,
+  "files": [],
+  "scripts": {
+    "webpack": "webpack --progress",
+    "webpack:watch": "webpack --progress --watch",
+    "webpack:server": "DEBUG=purescript-webpack-plugin,purs-loader webpack-dev-server --progress --inline --hot"
+  },
+  "dependencies": {
+    "purescript": "^0.8.5",
+    "purescript-psa": "^0.3.8",
+    "purescript-webpack-plugin": "^0.3.1",
+    "purs-loader": "^0.6.0",
+    "react": "^15.0.2",
+    "react-redux": "^4.4.5",
+    "redux": "^3.5.2",
+    "webpack": "^1.13.0",
+    "webpack-dev-server": "^1.14.1"
+  }
+}
