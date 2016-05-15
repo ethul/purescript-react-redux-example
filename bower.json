@@ -4,5 +4,8 @@
   "ignore": [
     "*",
     "!src/**/*"
-  ]
+  ],
+  "dependencies": {
+    "purescript-react-redux": "~0.1.0"
+  }
 }

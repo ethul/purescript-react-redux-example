@@ -17,14 +17,14 @@ var purescriptWebpackPlugin = new PurescriptWebpackPlugin({
   bundle: false,
   psc: 'psa',
   pscArgs: {
-    sourceMaps: true
+    sourceMaps: false
   }
 });
 
 var config
-  = { entry: './src/entry'
+  = { entry: './src/index'
     , debug: true
-    , devtool: 'source-map'
+    , devtool: 'eval'
     , devServer: { contentBase: '.'
                  , port: 4008
                  , stats: 'errors-only'
@@ -35,10 +35,6 @@ var config
               }
     , module: { loaders: [ { test: /\.purs$/
                            , loader: 'purs-loader'
-                           }
-                         , { test: /\.js$/
-                           , loader: 'source-map-loader'
-                           , exclude: /node_modules|bower_components/
                            }
                          ]
               }
