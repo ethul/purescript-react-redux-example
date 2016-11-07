@@ -6,6 +6,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "purescript-react-redux": "~0.1.0"
+    "purescript-react-redux": "~2.0.0"
   }
 }

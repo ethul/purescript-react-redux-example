@@ -1,18 +1,19 @@
 module Example.App (main) where
 
-import Prelude (Unit, (<$>), (+), (++), (<<<), bind, id, pure, show, void)
+import Prelude (Unit, (<$>), (+), (<>), (<<<), bind, id, pure, show, void)
 
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 
-import Data.Lens (LensP, PrismP, lens, prism')
+import Data.Lens (Lens', Prism', lens, prism')
 import Data.Maybe (Maybe(..))
 
 import React as React
 import React.DOM as DOM
 import React.DOM.Props as Props
 
-import React.Redux (Effects, Render, Reducer, ReduxReactClass, Store, createStore, createElement, reducerOptic, spec', createClass) as Redux
+import React.Redux (Effects, Render, Reducer, ReduxReactClass, Store, createStore,
+  createElement, reducerOptic, spec', createClass) as Redux
 
 type State = { counterA :: Int, counterB :: Int }
 
@@ -39,10 +40,10 @@ store = Redux.createStore reducer { counterA: 0, counterB: 0 }
       case action' of
            IncrementA -> state' { counterA = state'.counterA + 1 }
 
-    lensA :: LensP State StateA
+    lensA :: Lens' State StateA
     lensA = lens (\s -> { counterA: s.counterA }) (\s b -> s { counterA = b.counterA })
 
-    prismA :: PrismP Action ActionA
+    prismA :: Prism' Action ActionA
     prismA = prism' ActionA (\a -> case a of
                                         ActionA a' -> Just a'
                                         _ -> Nothing)
@@ -52,10 +53,10 @@ store = Redux.createStore reducer { counterA: 0, counterB: 0 }
       case action' of
            IncrementB -> state' { counterB = state'.counterB + 1 }
 
-    lensB :: LensP State StateB
+    lensB :: Lens' State StateB
     lensB = lens (\s -> { counterB: s.counterB }) (\s b -> s { counterB = b.counterB })
 
-    prismB :: PrismP Action ActionB
+    prismB :: Prism' Action ActionB
     prismB = prism' ActionB (\a -> case a of
                                         ActionB a' -> Just a'
                                         _ -> Nothing)
@@ -70,13 +71,13 @@ appClass = Redux.createClass id (Redux.spec' render)
     render' props =
       DOM.div []
               [ DOM.button [ Props.onClick (onClick (ActionA IncrementA)) ]
-                           [ DOM.text ("Increment A: " ++ show props.counterA) ]
+                           [ DOM.text ("Increment A: " <> show props.counterA) ]
               , DOM.button [ Props.onClick (onClick (ActionB IncrementB)) ]
-                           [ DOM.text ("Increment B: " ++ show props.counterB) ]
+                           [ DOM.text ("Increment B: " <> show props.counterB) ]
               ]
       where
       onClick :: Action -> React.Event -> React.EventHandlerContext eff Unit Unit Unit
-      onClick action event = void (unsafeInterleaveEff (dispatch (pure action)))
+      onClick action event = void (unsafeCoerceEff (dispatch (pure action)))
 
 main :: forall eff. Eff (Redux.Effects eff) React.ReactElement
 main = do
