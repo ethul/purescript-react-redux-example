@@ -4,6 +4,8 @@ Example of using [purescript-react-redux](https://github.com/ethul/purescript-re
 
 ## Installation
 
+Make sure that you have [`Node`](https://nodejs.org/en/) and [`Bower`](https://bower.io/) installed on your machine.
+
 ```bash
 npm i
 ```
