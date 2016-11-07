@@ -1,6 +1,6 @@
 # purescript-react-redux-example
 
-Example of using using [purescript-react-redux](https://github.com/ethul/purescript-react-redux).
+Example of using [purescript-react-redux](https://github.com/ethul/purescript-react-redux).
 
 ## Installation
 
