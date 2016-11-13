@@ -3,6 +3,8 @@ module Example.App (main) where
 import Prelude (Unit, (<$>), (+), (<>), (<<<), bind, id, pure, show, void)
 
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE, info)
+import Control.Monad.Eff.Timer (TIMER, setTimeout)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 
 import Data.Lens (Lens', Prism', lens, prism')
@@ -12,8 +14,7 @@ import React as React
 import React.DOM as DOM
 import React.DOM.Props as Props
 
-import React.Redux (Effects, Render, Reducer, ReduxReactClass, Store, createStore,
-  createElement, reducerOptic, spec', createClass) as Redux
+import React.Redux as Redux
 
 type State = { counterA :: Int, counterB :: Int }
 
@@ -23,13 +24,47 @@ type StateB = { counterB :: Int }
 
 data Action = ActionA ActionA | ActionB ActionB
 
-data ActionA = IncrementA
+data ActionA = IncrementA | DelayedIncrementA Int
 
 data ActionB = IncrementB
 
-store :: forall eff. Eff (Redux.Effects eff) (Redux.Store Action State)
-store = Redux.createStore reducer { counterA: 0, counterB: 0 }
+type Effect eff = (console :: CONSOLE, timer :: TIMER | eff)
+
+store :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) (Redux.Store Action State)
+store = Redux.createStore' reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer)
   where
+  initialState :: State
+  initialState = { counterA: 0, counterB: 0 }
+
+  reduxDevtoolsExtensionEnhancer :: Redux.Enhancer (Effect eff) Action State
+  reduxDevtoolsExtensionEnhancer = Redux.fromEnhancerForeign reduxDevtoolsExtensionEnhancer_
+
+  middlewareEnhancer :: Redux.Enhancer (Effect eff) Action State
+  middlewareEnhancer = Redux.applyMiddleware [ loggerMiddleware, timeoutSchedulerMiddleware ]
+
+  loggerMiddleware :: Redux.Middleware (Effect eff) Action State Unit
+  loggerMiddleware { getState, dispatch } next action = do
+    info showAction
+    next action
+    state <- getState
+    logState state
+    where
+    logState :: State -> Eff (Effect (Redux.ReduxEffect eff)) Unit
+    logState { counterA, counterB } = info ("state = { counterA: " <> show counterA <> ", " <> "counterB: " <> show counterB <> " }")
+
+    showAction :: String
+    showAction =
+      case action of
+           ActionA IncrementA -> "ActionA IncremementA"
+           ActionA (DelayedIncrementA delay) -> "ActionA (DelayedIncrementA " <> show delay <> ")"
+           ActionB IncrementB -> "ActionB IncremementB"
+
+  timeoutSchedulerMiddleware :: Redux.Middleware (Effect eff) Action State Unit
+  timeoutSchedulerMiddleware { getState, dispatch } next action =
+    case action of
+         ActionA (DelayedIncrementA delay) -> void (setTimeout delay (void (next action)))
+         _ -> void (next action)
+
   reducer :: Redux.Reducer Action State
   reducer action =
     (Redux.reducerOptic lensA prismA reducerA) action <<<
@@ -39,6 +74,7 @@ store = Redux.createStore reducer { counterA: 0, counterB: 0 }
     reducerA action' state' =
       case action' of
            IncrementA -> state' { counterA = state'.counterA + 1 }
+           DelayedIncrementA _ -> state' { counterA = state'.counterA + 1 }
 
     lensA :: Lens' State StateA
     lensA = lens (\s -> { counterA: s.counterA }) (\s b -> s { counterA = b.counterA })
@@ -62,9 +98,9 @@ store = Redux.createStore reducer { counterA: 0, counterB: 0 }
                                         _ -> Nothing)
 
 appClass :: Redux.ReduxReactClass State State
-appClass = Redux.createClass id (Redux.spec' render)
+appClass = Redux.createClass id id (Redux.spec' render)
   where
-  render :: forall eff. Redux.Render State Unit eff (Eff (Redux.Effects eff)) Action
+  render :: forall eff. Redux.Render State Unit eff (Eff (Redux.ReduxEffect eff)) Action
   render dispatch this = render' <$> React.getProps this
     where
     render' :: State -> React.ReactElement
@@ -72,6 +108,8 @@ appClass = Redux.createClass id (Redux.spec' render)
       DOM.div []
               [ DOM.button [ Props.onClick (onClick (ActionA IncrementA)) ]
                            [ DOM.text ("Increment A: " <> show props.counterA) ]
+              , DOM.button [ Props.onClick (onClick (ActionA (DelayedIncrementA 2000))) ]
+                           [ DOM.text ("Increment A (delayed by 2s): " <> show props.counterA) ]
               , DOM.button [ Props.onClick (onClick (ActionB IncrementB)) ]
                            [ DOM.text ("Increment B: " <> show props.counterB) ]
               ]
@@ -79,8 +117,10 @@ appClass = Redux.createClass id (Redux.spec' render)
       onClick :: Action -> React.Event -> React.EventHandlerContext eff Unit Unit Unit
       onClick action event = void (unsafeCoerceEff (dispatch (pure action)))
 
-main :: forall eff. Eff (Redux.Effects eff) React.ReactElement
+main :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) React.ReactElement
 main = do
   store' <- store
-  let element = Redux.createElement store' appClass
+  let element = Redux.createProviderElement store' appClass
   pure element
+
+foreign import reduxDevtoolsExtensionEnhancer_ :: forall action state. Redux.EnhancerForeign action state

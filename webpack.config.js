@@ -1,48 +1,46 @@
 'use strict';
 
-var PurescriptWebpackPlugin = require('purescript-webpack-plugin');
+module.exports = {
+  entry: './src/index',
 
-var src = ['bower_components/purescript-*/src/**/*.purs', 'src/Example/**/*.purs'];
+  debug: true,
 
-var ffi = ['bower_components/purescript-*/src/**/*.js', 'src/Example/**/*.js'];
+  devtool: 'eval',
 
-var modulesDirectories = [
-  'node_modules',
-  'bower_components'
-];
+  devServer: {
+    contentBase: '.',
+    port: 4008,
+    stats: 'errors-only'
+  },
 
-var purescriptWebpackPlugin = new PurescriptWebpackPlugin({
-  src: src,
-  ffi: ffi,
-  bundle: false,
-  psc: 'psa',
-  pscArgs: {
-    sourceMaps: false
+  output: {
+    path: __dirname,
+    pathinfo: true,
+    filename: 'bundle.js'
+  },
+
+  module: {
+    loaders: [
+      {
+        test: /\.purs$/,
+        loader: 'purs-loader',
+        exclude: /node_modules/,
+        query: {
+          psc: 'psa',
+          src: [
+            'bower_components/purescript-*/src/**/*.purs',
+            'src/Example/**/*.purs'
+          ]
+        }
+      }
+    ]
+  },
+
+  resolve: {
+    modulesDirectories: [
+      'node_modules',
+      'bower_components'
+    ],
+    extensions: [ '', '.purs', '.js']
   }
-});
-
-var config
-  = { entry: './src/index'
-    , debug: true
-    , devtool: 'eval'
-    , devServer: { contentBase: '.'
-                 , port: 4008
-                 , stats: 'errors-only'
-                 }
-    , output: { path: __dirname
-              , pathinfo: true
-              , filename: 'bundle.js'
-              }
-    , module: { loaders: [ { test: /\.purs$/
-                           , loader: 'purs-loader'
-                           }
-                         ]
-              }
-    , resolve: { modulesDirectories: modulesDirectories
-               , extensions: [ '', '.purs', '.js']
-               }
-    , plugins: [ purescriptWebpackPlugin ]
-    }
-    ;
-
-module.exports = config;
+};

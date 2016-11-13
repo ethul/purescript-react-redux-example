@@ -16,3 +16,7 @@ npm i
 npm run webpack:server
 ```
 Visit [http://localhost:4008/](http://localhost:4008/) in your browser.
+
+## Redux DevTools
+
+The example will hook into the [Redux DevTools Extension](https://github.com/zalmoxisus/redux-devtools-extension) if it is installed.
