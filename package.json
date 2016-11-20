@@ -13,7 +13,7 @@
   "dependencies": {
     "purescript": "^0.10.2",
     "purescript-psa": "^0.3.9",
-    "purs-loader": "^2.0.2",
+    "purs-loader": "^2.1.1",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
     "react-redux": "^4.4.5",

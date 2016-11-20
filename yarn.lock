@@ -2105,9 +2105,9 @@ purescript@^0.10.2:
     logalot "^2.1.0"
     to-executable-name "^1.0.0"
 
-purs-loader@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/purs-loader/-/purs-loader-2.0.2.tgz#8c4b7ec098c62feb086e4e9409f9571753fc3f3d"
+purs-loader:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/purs-loader/-/purs-loader-2.1.1.tgz#0873a7493e9da9dbe008154ff213bbc98cee59f2"
   dependencies:
     bluebird "^3.3.5"
     chalk "^1.1.3"

@@ -31,7 +31,7 @@ data ActionB = IncrementB
 type Effect eff = (console :: CONSOLE, timer :: TIMER | eff)
 
 store :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) (Redux.Store Action State)
-store = Redux.createStore' reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer)
+store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer)
   where
   initialState :: State
   initialState = { counterA: 0, counterB: 0 }
@@ -97,8 +97,8 @@ store = Redux.createStore' reducer initialState (middlewareEnhancer <<< reduxDev
                                         ActionB a' -> Just a'
                                         _ -> Nothing)
 
-appClass :: Redux.ReduxReactClass State State
-appClass = Redux.createClass id id (Redux.spec' render)
+appClass :: Redux.ReduxReactClass' State State
+appClass = Redux.createClass' id (Redux.spec' render)
   where
   render :: forall eff. Redux.Render State Unit eff (Eff (Redux.ReduxEffect eff)) Action
   render dispatch this = render' <$> React.getProps this
