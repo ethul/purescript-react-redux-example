@@ -6,8 +6,8 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "purescript-console": "^2.0.0",
-    "purescript-js-timers": "^2.0.0",
-    "purescript-react-redux": "^4.0.0"
+    "purescript-console": "^3.0.0",
+    "purescript-js-timers": "^3.0.0",
+    "purescript-react-redux": "^5.1.0"
   }
 }

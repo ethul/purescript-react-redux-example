@@ -31,21 +31,21 @@ data ActionB = IncrementB
 type Effect eff = (console :: CONSOLE, timer :: TIMER | eff)
 
 store :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) (Redux.Store Action State)
-store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer)
+store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer')
   where
   initialState :: State
   initialState = { counterA: 0, counterB: 0 }
 
-  reduxDevtoolsExtensionEnhancer :: Redux.Enhancer (Effect eff) Action State
-  reduxDevtoolsExtensionEnhancer = Redux.fromEnhancerForeign reduxDevtoolsExtensionEnhancer_
+  reduxDevtoolsExtensionEnhancer' :: Redux.Enhancer (Effect eff) Action State
+  reduxDevtoolsExtensionEnhancer' = Redux.fromEnhancerForeign reduxDevtoolsExtensionEnhancer
 
   middlewareEnhancer :: Redux.Enhancer (Effect eff) Action State
   middlewareEnhancer = Redux.applyMiddleware [ loggerMiddleware, timeoutSchedulerMiddleware ]
 
   loggerMiddleware :: Redux.Middleware (Effect eff) Action State Unit
   loggerMiddleware { getState, dispatch } next action = do
-    info showAction
-    next action
+    _ <- info showAction
+    _ <- next action
     state <- getState
     logState state
     where
@@ -123,4 +123,4 @@ main = do
   let element = Redux.createProviderElement store' appClass
   pure element
 
-foreign import reduxDevtoolsExtensionEnhancer_ :: forall action state. Redux.EnhancerForeign action state
+foreign import reduxDevtoolsExtensionEnhancer :: forall action state. Redux.EnhancerForeign action state

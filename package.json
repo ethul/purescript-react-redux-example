@@ -2,18 +2,19 @@
   "name": "purescript-react-redux-example",
   "version": "0.1.0",
   "private": true,
-  "flat": true,
+  "flat": false,
   "files": [],
   "scripts": {
     "webpack": "webpack --progress",
     "webpack:watch": "webpack --progress --watch",
     "webpack:server": "DEBUG=purs-loader webpack-dev-server --progress --inline --hot",
+    "purs:compile": "purs compile 'bower_components/purescript-*/src/**/*.purs' 'src/**/*.purs'",
     "postinstall": "bower i"
   },
   "dependencies": {
-    "purescript": "^0.10.2",
-    "purescript-psa": "^0.3.9",
-    "purs-loader": "^2.1.1",
+    "purescript": "^0.11.6",
+    "purescript-psa": "^0.5.1",
+    "purs-loader": "^3.1.1",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
     "react-redux": "^4.4.5",
