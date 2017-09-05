@@ -7,7 +7,7 @@
   "scripts": {
     "webpack": "webpack --progress",
     "webpack:watch": "webpack --progress --watch",
-    "webpack:server": "DEBUG=purs-loader webpack-dev-server --progress --inline --hot",
+    "webpack-dev-server": "DEBUG=purs-loader webpack-dev-server --progress --inline --hot",
     "purs:compile": "purs compile 'bower_components/purescript-*/src/**/*.purs' 'src/**/*.purs'",
     "postinstall": "bower i"
   },
@@ -17,7 +17,7 @@
     "purs-loader": "^3.1.1",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
-    "react-redux": "^4.4.5",
+    "react-redux": "^5.0.6",
     "redux": "^3.6.0",
     "webpack": "^1.13.3",
     "webpack-dev-server": "^1.16.2"
