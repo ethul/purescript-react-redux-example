@@ -7,7 +7,6 @@ import Control.Monad.Eff.Console (CONSOLE, info)
 import Control.Monad.Eff.Timer (TIMER, setTimeout)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 
-import Data.Lens (Lens', Prism', lens, prism')
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (wrap)
 
@@ -18,10 +17,6 @@ import React.DOM.Props as Props
 import React.Redux as Redux
 
 type State = { counterA :: Int, counterB :: Int }
-
-type StateA = { counterA :: Int }
-
-type StateB = { counterB :: Int }
 
 data Action = ActionA ActionA | ActionB ActionB
 
@@ -68,37 +63,21 @@ store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevt
 
   reducer :: Redux.Reducer' Action State
   reducer =
-    Redux.reducerOptic lensA prismA reducerA <<<
-    Redux.reducerOptic lensB prismB reducerB
+    reducerA <<<
+    reducerB
     where
-    reducerA :: Redux.Reducer' ActionA StateA
+    reducerA :: Redux.Reducer' Action State
     reducerA = wrap $ \action state ->
       case action of
-           IncrementA -> state { counterA = state.counterA + 1 }
-           DelayedIncrementA _ -> state { counterA = state.counterA + 1 }
+           ActionA IncrementA -> state { counterA = state.counterA + 1 }
+           ActionA (DelayedIncrementA _) -> state { counterA = state.counterA + 1 }
+           _ -> state
 
-    lensA :: Lens' State StateA
-    lensA = lens (\s -> { counterA: s.counterA }) (\s b -> s { counterA = b.counterA })
-
-    prismA :: Prism' Action ActionA
-    prismA = prism' ActionA $
-      case _ of
-           ActionA a -> Just a
-           _ -> Nothing
-
-    reducerB :: Redux.Reducer' ActionB StateB
+    reducerB :: Redux.Reducer' Action State
     reducerB = wrap $ \action state ->
       case action of
-           IncrementB -> state { counterB = state.counterB + 1 }
-
-    lensB :: Lens' State StateB
-    lensB = lens (\s -> { counterB: s.counterB }) (\s b -> s { counterB = b.counterB })
-
-    prismB :: Prism' Action ActionB
-    prismB = prism' ActionB $
-      case _ of
-           ActionB a -> Just a
-           _ -> Nothing
+           ActionB IncrementB -> state { counterB = state.counterB + 1 }
+           _ -> state
 
 type IncrementAProps eff
   = { a :: Int
@@ -137,22 +116,22 @@ incrementBClass = React.createClassStateless render
             ]
 
 incrementAComponent :: forall eff. Redux.ConnectClass' State (IncrementAProps eff)
-incrementAComponent = Redux.connect stateToProps dispatchToProps incrementAClass
+incrementAComponent = Redux.connect_ stateToProps dispatchToProps { } incrementAClass
   where
-  stateToProps :: State -> { } -> { a :: Int }
-  stateToProps { counterA } ownProps = { a: counterA }
+  stateToProps :: State -> { a :: Int }
+  stateToProps { counterA } = { a: counterA }
 
-  dispatchToProps :: Redux.Dispatch' eff Action -> { } -> { onIncrement :: Maybe Int -> Eff eff Unit }
-  dispatchToProps dispatch ownProps = { onIncrement: void <<< unsafeCoerceEff <<< dispatch <<< ActionA <<< maybe IncrementA DelayedIncrementA }
+  dispatchToProps :: Redux.Dispatch' eff Action -> { onIncrement :: Maybe Int -> Eff eff Unit }
+  dispatchToProps dispatch = { onIncrement: void <<< unsafeCoerceEff <<< dispatch <<< ActionA <<< maybe IncrementA DelayedIncrementA }
 
 incrementBComponent :: forall eff. Redux.ConnectClass' State (IncrementBProps eff)
-incrementBComponent = Redux.connect stateToProps dispatchToProps incrementBClass
+incrementBComponent = Redux.connect_ stateToProps dispatchToProps { pure: false } incrementBClass
   where
-  stateToProps :: State -> { } -> { b :: Int }
-  stateToProps { counterB } _ = { b: counterB }
+  stateToProps :: State -> { b :: Int }
+  stateToProps { counterB } = { b: counterB }
 
-  dispatchToProps :: Redux.Dispatch' eff Action -> { } -> { onIncrement :: Eff eff Unit }
-  dispatchToProps dispatch _ = { onIncrement: void (unsafeCoerceEff (dispatch (ActionB IncrementB))) }
+  dispatchToProps :: Redux.Dispatch' eff Action -> { onIncrement :: Eff eff Unit }
+  dispatchToProps dispatch = { onIncrement: void (unsafeCoerceEff (dispatch (ActionB IncrementB))) }
 
 type AppProps = Unit
 
