@@ -4,6 +4,7 @@
 .psc-ide-port
 .pulp-cache/
 npm-debug.log
+yarn-error.log
 node_modules/
 bower_components/
 tmp/

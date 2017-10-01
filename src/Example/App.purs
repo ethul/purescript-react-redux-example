@@ -14,7 +14,19 @@ import React as React
 import React.DOM as DOM
 import React.DOM.Props as Props
 
-import React.Redux as Redux
+import React.Redux
+  ( BaseDispatch
+  , ConnectClass'
+  , Reducer
+  , ReduxEffect
+  , ReduxStore
+  , ReduxStoreEnhancer
+  , applyMiddleware
+  , connect_
+  , createElement_
+  , createProviderElement
+  , createStore
+  ) as Redux
 
 type State = { counterA :: Int, counterB :: Int }
 
@@ -26,55 +38,48 @@ data ActionB = IncrementB
 
 type Effect eff = (console :: CONSOLE, timer :: TIMER | eff)
 
-store :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) (Redux.Store Action State)
-store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer')
+store :: forall eff. Eff (Effect (Redux.ReduxEffect eff)) (Redux.ReduxStore (Effect eff) State Action)
+store = Redux.createStore reducer initialState (middlewareEnhancer <<< reduxDevtoolsExtensionEnhancer)
   where
   initialState :: State
   initialState = { counterA: 0, counterB: 0 }
 
-  reduxDevtoolsExtensionEnhancer' :: Redux.Enhancer (Effect eff) Action State
-  reduxDevtoolsExtensionEnhancer' = Redux.fromEnhancerForeign reduxDevtoolsExtensionEnhancer
-
-  middlewareEnhancer :: Redux.Enhancer (Effect eff) Action State
-  middlewareEnhancer = Redux.applyMiddleware [ loggerMiddleware, timeoutSchedulerMiddleware ]
-
-  loggerMiddleware :: Redux.Middleware (Effect eff) Action State Unit
-  loggerMiddleware { getState, dispatch } next action = do
-    _ <- info showAction
-    _ <- next action
-    state <- getState
-    logState state
+  middlewareEnhancer :: Redux.ReduxStoreEnhancer (Effect eff) State Action
+  middlewareEnhancer = Redux.applyMiddleware (wrap <$> [ loggerMiddleware, timeoutSchedulerMiddleware ])
     where
-    logState :: State -> Eff (Effect (Redux.ReduxEffect eff)) Unit
-    logState { counterA, counterB } = info ("state = { counterA: " <> show counterA <> ", " <> "counterB: " <> show counterB <> " }")
+    loggerMiddleware { getState, dispatch } next action = do
+      _ <- info (showAction action)
+      _ <- next action
+      state <- getState
+      logState state
+      where
+      logState :: State -> Eff (Effect (Redux.ReduxEffect eff)) Unit
+      logState { counterA, counterB } = info ("state = { counterA: " <> show counterA <> ", " <> "counterB: " <> show counterB <> " }")
 
-    showAction :: String
-    showAction =
+      showAction :: Action -> String
+      showAction =
+        case _ of
+             ActionA IncrementA -> "ActionA IncremementA"
+             ActionA (DelayedIncrementA delay) -> "ActionA (DelayedIncrementA " <> show delay <> ")"
+             ActionB IncrementB -> "ActionB IncremementB"
+
+    timeoutSchedulerMiddleware { getState, dispatch } next action =
       case action of
-           ActionA IncrementA -> "ActionA IncremementA"
-           ActionA (DelayedIncrementA delay) -> "ActionA (DelayedIncrementA " <> show delay <> ")"
-           ActionB IncrementB -> "ActionB IncremementB"
+           ActionA (DelayedIncrementA delay) -> void (setTimeout delay (void (next action)))
+           _ -> void (next action)
 
-  timeoutSchedulerMiddleware :: Redux.Middleware (Effect eff) Action State Unit
-  timeoutSchedulerMiddleware { getState, dispatch } next action =
-    case action of
-         ActionA (DelayedIncrementA delay) -> void (setTimeout delay (void (next action)))
-         _ -> void (next action)
-
-  reducer :: Redux.Reducer' Action State
+  reducer :: Redux.Reducer Action State
   reducer =
-    reducerA <<<
-    reducerB
+    wrap reducerA <<<
+    wrap reducerB
     where
-    reducerA :: Redux.Reducer' Action State
-    reducerA = wrap $ \action state ->
+    reducerA action state =
       case action of
            ActionA IncrementA -> state { counterA = state.counterA + 1 }
            ActionA (DelayedIncrementA _) -> state { counterA = state.counterA + 1 }
            _ -> state
 
-    reducerB :: Redux.Reducer' Action State
-    reducerB = wrap $ \action state ->
+    reducerB action state =
       case action of
            ActionB IncrementB -> state { counterB = state.counterB + 1 }
            _ -> state
@@ -92,11 +97,13 @@ incrementAClass = React.createClassStateless render
          , onIncrement
          } =
     DOM.div []
-            [ DOM.button [ Props.onClick (const $ unsafeCoerceEff (onIncrement Nothing)) ]
-                         [ DOM.text ("Increment A: " <> show a) ]
-            , DOM.button [ Props.onClick (const $ unsafeCoerceEff (onIncrement (Just 2000))) ]
-                         [ DOM.text ("Increment A (delayed by 2s): " <> show a) ]
-            ]
+      [ DOM.button
+          [ Props.onClick (\event -> unsafeCoerceEff (onIncrement Nothing)) ]
+          [ DOM.text ("Increment A: " <> show a) ]
+      , DOM.button
+          [ Props.onClick (const $ unsafeCoerceEff (onIncrement (Just 2000))) ]
+          [ DOM.text ("Increment A (delayed by 2s): " <> show a) ]
+      ]
 
 type IncrementBProps eff
   = { b :: Int
@@ -111,27 +118,34 @@ incrementBClass = React.createClassStateless render
          , onIncrement
          } =
     DOM.div []
-            [ DOM.button [ Props.onClick (const $ unsafeCoerceEff onIncrement) ]
-                         [ DOM.text ("Increment B: " <> show b) ]
-            ]
+      [ DOM.button
+          [ Props.onClick (const $ unsafeCoerceEff onIncrement) ]
+          [ DOM.text ("Increment B: " <> show b) ]
+      ]
 
-incrementAComponent :: forall eff. Redux.ConnectClass' State (IncrementAProps eff)
+incrementAComponent :: forall eff. Redux.ConnectClass' State (IncrementAProps eff) Action
 incrementAComponent = Redux.connect_ stateToProps dispatchToProps { } incrementAClass
   where
   stateToProps :: State -> { a :: Int }
-  stateToProps { counterA } = { a: counterA }
+  stateToProps { counterA } =
+    { a: counterA
+    }
 
-  dispatchToProps :: Redux.Dispatch' eff Action -> { onIncrement :: Maybe Int -> Eff eff Unit }
-  dispatchToProps dispatch = { onIncrement: void <<< unsafeCoerceEff <<< dispatch <<< ActionA <<< maybe IncrementA DelayedIncrementA }
+  dispatchToProps :: Redux.BaseDispatch eff Action -> { onIncrement :: Maybe Int -> Eff eff Unit }
+  dispatchToProps dispatch =
+    { onIncrement: void <<< unsafeCoerceEff <<< dispatch <<< ActionA <<< maybe IncrementA DelayedIncrementA
+    }
 
-incrementBComponent :: forall eff. Redux.ConnectClass' State (IncrementBProps eff)
-incrementBComponent = Redux.connect_ stateToProps dispatchToProps { pure: false } incrementBClass
+incrementBComponent :: forall eff. Redux.ConnectClass' State (IncrementBProps eff) Action
+incrementBComponent = Redux.connect_ stateToProps dispatchToProps { withRef: true } incrementBClass
   where
-  stateToProps :: State -> { b :: Int }
-  stateToProps { counterB } = { b: counterB }
+  stateToProps { counterB } =
+    { b: counterB
+    }
 
-  dispatchToProps :: Redux.Dispatch' eff Action -> { onIncrement :: Eff eff Unit }
-  dispatchToProps dispatch = { onIncrement: void (unsafeCoerceEff (dispatch (ActionB IncrementB))) }
+  dispatchToProps dispatch =
+    { onIncrement: void (unsafeCoerceEff (dispatch (ActionB IncrementB)))
+    }
 
 type AppProps = Unit
 
@@ -156,4 +170,4 @@ main = do
 
   pure element
 
-foreign import reduxDevtoolsExtensionEnhancer :: forall action state. Redux.EnhancerForeign action state
+foreign import reduxDevtoolsExtensionEnhancer :: forall eff state action. Redux.ReduxStoreEnhancer eff state action
