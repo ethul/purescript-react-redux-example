@@ -5,7 +5,7 @@ module.exports = {
 
   debug: true,
 
-  devtool: 'eval',
+  devtool: 'source-map',
 
   devServer: {
     contentBase: '.',
@@ -27,6 +27,9 @@ module.exports = {
         exclude: /node_modules/,
         query: {
           psc: 'psa',
+          pscArgs: {
+            sourceMaps: false
+          },
           src: [
             'bower_components/purescript-*/src/**/*.purs',
             'src/Example/**/*.purs'

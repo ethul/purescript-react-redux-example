@@ -8,6 +8,6 @@
   "dependencies": {
     "purescript-console": "^3.0.0",
     "purescript-js-timers": "^3.0.0",
-    "purescript-react-redux": "^5.1.0"
+    "purescript-react-redux": "^6.0.0"
   }
 }
